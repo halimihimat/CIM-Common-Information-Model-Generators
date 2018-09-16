@@ -276,7 +276,7 @@ namespace CodeGenerator
                 en.Title = en.Title.Replace("<b>", "").Replace("</b>", "").Replace("<i>", "").Replace("</i>", "").Trim();
                 en.Description = en.Description.Replace("<b>", "").Replace("</b>", "").Replace("<i>", "").Replace("</i>", "").Trim();
 
-               
+                
 
                 foreach (EA.Attribute l_Attr in elem.Attributes)
                 {
@@ -381,7 +381,7 @@ namespace CodeGenerator
                 }
             }
 
-           
+          
         }
 
         public void FindType(EAPClass l_Class, EAPAttribute l_MyAttr, EA.Attribute l_Attr)
@@ -415,6 +415,7 @@ namespace CodeGenerator
                     }
                     else
                     {
+                      
                         if (!typeStr.Contains(l_Attr.Type.ToLower()))
                         {
                             l_MyAttr.MeasurementType = l_Attr.Type;
@@ -621,13 +622,13 @@ namespace CodeGenerator
                 else
                     l_MyAttr.MeasurementType = "List<" + FindClassById(l_Attr.ClientID, MyModelCopy) + ">";
 
-                l_MyAttr.IsListOfReferences = true; 
+                l_MyAttr.IsListOfReferences = true;  
 
             }
             else if (l_MyAttr.Max == "1")
             {
                 l_MyAttr.MeasurementType = "long";
-                l_MyAttr.IsReference = true;   
+                l_MyAttr.IsReference = true;  
             }
 
 
@@ -717,7 +718,6 @@ namespace CodeGenerator
         {
             bool aggregated = false;
 
-          
             foreach (EA.AttributeConstraint str in l_Attr.Constraints)
             {
                 if (str.Name.ToLower() == "aggregated")

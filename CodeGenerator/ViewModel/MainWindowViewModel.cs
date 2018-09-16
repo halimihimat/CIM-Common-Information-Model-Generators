@@ -24,13 +24,24 @@ namespace CodeGenerator.ViewModel
         private string filePath;
         private string destPath;
         private string logTb;
+        private string dbName;
         private List<CodeCompileUnit> filesComplete = new List<CodeCompileUnit>();
+        private List<CodeCompileUnit> filesforDb = new List<CodeCompileUnit>();
         public bool isSelected;
         private ICommand openFileDialog;
         private ICommand generateCommand;
         private ICommand destFileDialog;
 
         #region Properties
+        public bool IsDbSelected
+        {
+            get { return isSelected; }
+            set
+            {
+                isSelected = value;
+                OnPropertyChanged("IsDbSelected");
+            }
+        }
 
         public string FilePath
         {
@@ -50,7 +61,16 @@ namespace CodeGenerator.ViewModel
                 OnPropertyChanged("DestPath");
             }
         }
-  
+        public string DbName
+        {
+            get { return dbName; }
+            set
+            {
+                dbName = value;
+                OnPropertyChanged("DbName");
+            }
+        }
+
         public string LogTB
         {
             get { return logTb; }
@@ -73,7 +93,17 @@ namespace CodeGenerator.ViewModel
             }
         }
 
-    
+        private List<CodeCompileUnit> FilesForDb
+        {
+            get
+            {
+                return filesforDb;
+            }
+            set
+            {
+                filesforDb = value;
+            }
+        }
 
         public ICommand OpenFileDialog
         {
@@ -158,7 +188,11 @@ namespace CodeGenerator.ViewModel
                 LogTB = "Exception message:\n" + e.Message + " Not completed!";
                 return;
             }
-     
+            if (IsDbSelected && DbName == null  )
+            {
+                LogTB = "Database name length must be in range 1 to 20 characters";
+                return;
+            }
 
            
             Thread t = new Thread((ThreadStart)delegate ()
@@ -194,6 +228,7 @@ namespace CodeGenerator.ViewModel
 
             GenerateCode(eapObjModels[0]);
             fw.WriteFiles("1.0.0", FilesComplete, DestPath, false);
+            fw.WriteFiles("1.0.0", FilesForDb, DestPath, true);
             t1.Abort();
             var path = DestPath + "\\classes";
             Process.Start(@path);
@@ -202,22 +237,53 @@ namespace CodeGenerator.ViewModel
         public void GenerateCode(EAPModel model)
         {
             FilesComplete.Clear();
+            FilesForDb.Clear();
             foreach (var item in model.Classes)
             {
                 DictionaryEntry table = (DictionaryEntry)item;
 
                 CodeCompileUnit unit = BuildCodeCUnit(model, table.Value, true);
-             
+                if (IsDbSelected)
+                {
+                    CodeCompileUnit unitDb = BuildCodeCUnit(model, table.Value, false);
+                    if (unitDb != null)
+                        FilesForDb.Add(unitDb);
+                }
                 if (unit != null)
                 {
                     //add it to the list, unless its null
                     FilesComplete.Add(unit);
                 }
             }
-         
+            if (IsDbSelected)
+            {
+                CodeCompileUnit unitDb = CreateDBContextClass(model);
+                FilesForDb.Add(unitDb);
+            }
          //   CreateParentClass(); // ovo treba izbaciti za IdentifiedObject
         }
-       
+
+        private CodeCompileUnit CreateDBContextClass(EAPModel model)
+        {
+            CodeCompileUnit unit = new CodeCompileUnit();
+            //namespace
+            CodeNamespace nameSpace = new CodeNamespace("Default_Namespace");
+            unit.Namespaces.Add(nameSpace);
+            //namespace imports
+            nameSpace.Imports.Add(new CodeNamespaceImport("System"));
+
+            CodeTypeDeclaration file = new CodeTypeDeclaration();
+            file.IsClass = true;
+            file.Name = DbName;
+            file.TypeAttributes = TypeAttributes.Public;
+            file.Attributes = MemberAttributes.Public;
+            nameSpace.Types.Add(file);
+
+            return unit;
+
+
+        }
+
         private CodeCompileUnit BuildCodeCUnit(EAPModel model, object v, bool flagDb)
         {
             CodeCompileUnit unit = null;
@@ -348,7 +414,10 @@ namespace CodeGenerator.ViewModel
                     }
                 }
 
-            
+                if (IsDbSelected && flagDb == false)
+                {
+                    GenerateIDForDb(file,classPom.Name);   // generate id if db checbox is selected
+                }
                 if (flagDb)
                 {
                     GenerateEqualsMethod(file, classPom);

@@ -27,7 +27,6 @@ namespace CodeGenerator.Model
         {
             for (int i = 0; i < attributes.Count; i++)
             {
-          
             }
 
             Attributes.Add(attr);
